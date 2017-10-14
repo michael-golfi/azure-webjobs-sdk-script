@@ -1,10 +1,14 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Script.Config;
+using Microsoft.Azure.WebJobs.Script.WebHost.Helpers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost
 {
@@ -64,8 +68,21 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost
             {
                 throw new InvalidOperationException("Unable to determine function script root directory.");
             }
+            else if (FileSystemHelpers.FileExists(Path.Combine(settings.ScriptPath, "local.settings.json")))
+            {
+                var obj = JsonConvert.DeserializeObject<LocalSettingsJson>(File.ReadAllText(Path.Combine(settings.ScriptPath, "local.settings.json")));
+                foreach (var pair in obj.Values)
+                {
+                    Environment.SetEnvironmentVariable(pair.Key, pair.Value);
+                }
+            }
 
             return settings;
         }
+    }
+
+    internal class LocalSettingsJson
+    {
+        public Dictionary<string, string> Values { get; set; } = new Dictionary<string, string>();
     }
 }
